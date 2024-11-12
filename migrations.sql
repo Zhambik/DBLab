@@ -1,4 +1,4 @@
--- Active: 1731418800391@@127.0.0.1@5432@postgres
+
 CREATE TABLE teams (
     team_id SERIAL PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
