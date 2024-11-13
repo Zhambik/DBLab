@@ -6,18 +6,18 @@ CREATE TABLE teams (
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
 
-INSERT INTO teams (name, country)
+INSERT INTO teams (team_id, name, country)
 VALUES
-('Manchester City', 'England'),
-('Arsenal', 'England'),
-('Chelsea', 'England'),
-('Liverpool', 'England'),
-('Inter-Miami', 'USA'),
-('Bayern Munich', 'Germany'),
-('Barcelona', 'Spain'),
-('Real Madrid', 'Spain'),
-('Aston Villa', 'England'),
-('Napoli', 'Italy');
+(1,'Manchester City', 'England'),
+(2,'Arsenal', 'England'),
+(3,'Chelsea', 'England'),
+(4,'Liverpool', 'England'),
+(5,'Inter-Miami', 'USA'),
+(6,'Bayern Munich', 'Germany'),
+(7,'Barcelona', 'Spain'),
+(8,'Real Madrid', 'Spain'),
+(9,'Aston Villa', 'England'),
+(10,'Napoli', 'Italy');
 
 
 CREATE TABLE players (
@@ -31,18 +31,18 @@ CREATE TABLE players (
     UNIQUE (name, surname, team_id)  -- Уникальность игрока в одной команде
 );
 
-INSERT INTO players (name, surname, country, position, team_id)
+INSERT INTO players (player_id, name, surname, country, position, team_id)
 VALUES
-('Erling', 'Haaland', 'Norway', 'Forward', 1),
-('Lionel', 'Messi', 'Argentina', 'Forward', 5),
-('Kai', 'Haverts', 'Germany', 'Forward', 2),
-('Mohamed', 'Salah', 'Egypt', 'Forward', 4),
-('Kylian', 'Mbappé', 'France', 'Forward', 8),
-('Ollie', 'Watkins', 'Portugal', 'Forward', 9),
-('Dani', 'Olmo', 'Spain', 'Midfielder', 7),
-('Harry', 'Kane', 'England', 'Forward', 6),
-('Coul', 'Palmer', 'England', 'Midfielder', 3),
-('Khvicha', 'Kvaratskhelia', 'Georgia', 'Forward', 10);
+(1,'Erling', 'Haaland', 'Norway', 'Forward', 1),
+(2,'Lionel', 'Messi', 'Argentina', 'Forward', 5),
+(3,'Kai', 'Haverts', 'Germany', 'Forward', 2),
+(4,'Mohamed', 'Salah', 'Egypt', 'Forward', 4),
+(5,'Kylian', 'Mbappé', 'France', 'Forward', 8),
+(6,'Ollie', 'Watkins', 'Portugal', 'Forward', 9),
+(7,'Dani', 'Olmo', 'Spain', 'Midfielder', 7),
+(8,'Harry', 'Kane', 'England', 'Forward', 6),
+(9,'Coul', 'Palmer', 'England', 'Midfielder', 3),
+(10,'Khvicha', 'Kvaratskhelia', 'Georgia', 'Forward', 10);
 
 CREATE TABLE coaches (
     coach_id SERIAL PRIMARY KEY ,
@@ -52,42 +52,42 @@ CREATE TABLE coaches (
     UNIQUE (name, surname)  
 );
 
-INSERT INTO coaches (name, surname, country)
+INSERT INTO coaches (coach_id, name, surname, country)
 VALUES
-('Pep', 'Guardiola', 'Spain'),
-('Mikel', 'Arteta', 'Spain'),
-('Juanma', 'Lillo', 'Spain'),
-('Jürgen', 'Klopp', 'Germany'),
-('Gerardo', 'Martino', 'Argentina'),
-('Vincent', 'Kompany', 'Belgium'),
-('Hansi', 'Flik', 'Germany'),
-('Carlo', 'Ancelotti', 'Italy'),
-('Unai', 'Emery', 'Spain'),
-('Luciano', 'Spalletti', 'Italy');
+(1,'Pep', 'Guardiola', 'Spain'),
+(2,'Mikel', 'Arteta', 'Spain'),
+(3,'Juanma', 'Lillo', 'Spain'),
+(4,'Jürgen', 'Klopp', 'Germany'),
+(5,'Gerardo', 'Martino', 'Argentina'),
+(6,'Vincent', 'Kompany', 'Belgium'),
+(7,'Hansi', 'Flik', 'Germany'),
+(8,'Carlo', 'Ancelotti', 'Italy'),
+(9,'Unai', 'Emery', 'Spain'),
+(10,'Luciano', 'Spalletti', 'Italy');
 
 CREATE TABLE team_coaches (
     team_coaches_id SERIAL PRIMARY KEY ,
     team_id INT NOT NULL,
     coach_id INT NOT NULL,
     start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
+    end_date DATE,
     job_title VARCHAR(64) NOT NULL CHECK (job_title <> '' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %'),
     FOREIGN KEY (team_id) REFERENCES teams(team_id),
     FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
 );
 
-INSERT INTO team_coaches (team_id, coach_id,start_date, end_date, job_title)
+INSERT INTO team_coaches (team_coaches_id ,team_id, coach_id,start_date, end_date, job_title)
 VALUES
-(7, 7, '2024-08-26','2024-08-26', 'Head Coach'),
-(8, 8, '2013-11-27', '2024-08-26','Head Coach'),
-(1, 3, '2023-06-12', '2024-08-26','Head Coach'),
-(4, 4, '2016-01-07', '2024-08-26','Assistant'),
-(8, 8, '2021-07-30', '2024-08-26','Head Coach'),
-(6, 6, '2024-10-26', '2024-08-26','Head Coach'),
-(7, 7, '2024-10-26', '2024-08-26','Head Coach'),
-(8, 8, '2024-10-26', '2024-08-26','Head Coach'),
-(9, 9, '2024-10-26', '2024-08-26','Head Coach'),
-(10, 10,'2024-10-26','2024-08-26','Head Coach');
+(1,7, 7, '2024-08-26',NULL, 'Head Coach'),
+(2,8, 8, '2013-11-27', '2015-08-26','Head Coach'),
+(3,1, 3, '2023-06-12', '2024-12-26','Head Coach'),
+(4,4, 4, '2016-01-07', '2024-08-26','Assistant'),
+(5,6, 8, '2021-07-30', '2024-08-26','Head Coach'),
+(6,6, 6, '2019-10-26', '2024-08-26','Head Coach'),
+(7,7, 7, '2014-10-26', '2024-08-26','Head Coach'),
+(8,5, 2, '2014-10-26', '2024-08-26','Head Coach'),
+(9,9, 9, '2024-10-26', '2024-08-26','Head Coach'),
+(10,10, 10,'2019-9-26','2024-08-15','Head Coach');
 
 
 CREATE TABLE matches (
@@ -103,16 +103,30 @@ CREATE TABLE matches (
     CHECK (team_1_id <> team_2_id)  -- Команда не может играть сама с собой
 );
 
-INSERT INTO matches (team_1_id, team_2_id, team_1_goals, team_2_goals, match_date, tournament)
+INSERT INTO matches (match_id, team_1_id, team_2_id, team_1_goals, team_2_goals, match_date, tournament)
 VALUES
-(7, 8, 4, 0, '2024-10-26', 'La Liga'),
-(3, 2, 1, 1, '2024-11-11', 'Premier League'),
-(2, 9, 3, 2, '2024-11-12', 'Premier League'),
-(1, 7, 2, 5, '2024-11-13', 'Champions League'),
-(5, 10, 1, 1, '2024-11-14', 'Serie A'),
-(7, 8, 2, 2, '2024-11-15', 'La Liga'),
-(4, 9, 3, 0, '2024-11-16', 'Premier League'),
-(6, 1, 1, 1, '2024-11-17', 'Champions League'),
-(5, 2, 3, 1, '2024-11-18', 'Champions League'),
-(6, 10, 1, 2, '2024-11-19', 'Serie A');
+(1,7, 8, 4, 0, '2024-10-26', 'La Liga'),
+(2,3, 2, 1, 1, '2024-11-11', 'Premier League'),
+(3,2, 9, 3, 2, '2024-11-12', 'Premier League'),
+(4,1, 7, 2, 5, '2024-11-13', 'Champions League'),
+(5,5, 10, 1, 1, '2024-11-14', 'Serie A'),
+(6,7, 8, 2, 2, '2024-11-15', 'La Liga'),
+(7,4, 9, 3, 0, '2024-11-16', 'Premier League'),
+(8,6, 1, 1, 1, '2024-11-17', 'Champions League'),
+(9,5, 2, 3, 1, '2024-11-18', 'Champions League'),
+(10,6, 10, 1, 2, '2024-11-19', 'Serie A');
 
+-- SELECT 
+--     c.name,
+--     c.surname,
+--     t.name AS team_name,
+--     start_date,
+--     end_date
+-- FROM 
+--     teams AS t
+-- JOIN 
+--     team_coaches AS tc ON t.team_id = tc.team_id
+-- JOIN 
+--     coaches AS c ON tc.coach_id = c.coach_id
+-- WHERE 
+--     c.coach_id = 8;
