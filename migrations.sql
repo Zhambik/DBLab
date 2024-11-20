@@ -1,11 +1,13 @@
 
 CREATE TABLE teams (
-    team_id SERIAL PRIMARY KEY ,
+    team_id INT DEFAULT nextval('teams_team_id_seq')  PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
     country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
-
+-- drop table teams;
+ CREATE SEQUENCE teams_team_id_seq; 
+-- drop SEQUENCE teams_team_id_seq; 
 INSERT INTO teams (team_id, name, country)
 VALUES
 (1,'Manchester City', 'England'),
@@ -19,9 +21,16 @@ VALUES
 (9,'Aston Villa', 'England'),
 (10,'Napoli', 'Italy');
 
+SELECT setval('teams_team_id_seq', (SELECT MAX(team_id)  FROM teams));
+-- INSERT INTO teams (name, country)
+-- VALUES
+-- ('a','a');
 
+
+
+create SEQUENCE players_player_id_seq;
 CREATE TABLE players (
-    player_id SERIAL PRIMARY KEY,
+    player_id INT DEFAULT nextval('players_player_id_seq') PRIMARY KEY,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
     surname VARCHAR(64) NOT NULL CHECK (surname <> '' AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
     country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
@@ -43,9 +52,11 @@ VALUES
 (8,'Harry', 'Kane', 'England', 'Forward', 6),
 (9,'Coul', 'Palmer', 'England', 'Midfielder', 3),
 (10,'Khvicha', 'Kvaratskhelia', 'Georgia', 'Forward', 10);
+SELECT setval('players_player_id_seq', (SELECT MAX(player_id)  FROM players));
 
+create SEQUENCE coaches_coach_id_seq;
 CREATE TABLE coaches (
-    coach_id SERIAL PRIMARY KEY ,
+    coach_id INT DEFAULT nextval('coaches_coach_id_seq') PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
     surname VARCHAR(64) NOT NULL CHECK (surname <> '' AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
     country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
@@ -64,9 +75,11 @@ VALUES
 (8,'Carlo', 'Ancelotti', 'Italy'),
 (9,'Unai', 'Emery', 'Spain'),
 (10,'Luciano', 'Spalletti', 'Italy');
+SELECT setval('coaches_coach_id_seq', (SELECT MAX(coach_id)  FROM coaches));
 
+create SEQUENCE team_coaches_id_seq;
 CREATE TABLE team_coaches (
-    team_coaches_id SERIAL PRIMARY KEY ,
+    team_coaches_id INT DEFAULT nextval('team_coaches_id_seq') PRIMARY KEY ,
     team_id INT NOT NULL,
     coach_id INT NOT NULL,
     start_date DATE NOT NULL,
@@ -89,9 +102,10 @@ VALUES
 (9,9, 9, '2024-10-26', '2024-08-26','Head Coach'),
 (10,10, 10,'2019-9-26','2024-08-15','Head Coach');
 
-
+SELECT setval('team_coaches_id_seq', (SELECT MAX(team_coaches_id)  FROM team_coaches));
+create SEQUENCE matches_match_id_seq;
 CREATE TABLE matches (
-    match_id SERIAL PRIMARY KEY,
+    match_id INT DEFAULT nextval('matches_match_id_seq') PRIMARY KEY,
     team_1_id INT NOT NULL,
     team_2_id INT NOT NULL,
     team_1_goals INT DEFAULT 0 CHECK (team_1_goals >= 0),
@@ -115,6 +129,8 @@ VALUES
 (8,6, 1, 1, 1, '2024-11-17', 'Champions League'),
 (9,5, 2, 3, 1, '2024-11-18', 'Champions League'),
 (10,6, 10, 1, 2, '2024-11-19', 'Serie A');
+
+SELECT setval('matches_match_id_seq', (SELECT MAX(match_id)  FROM matches));
 
 -- SELECT 
 --     c.name,
