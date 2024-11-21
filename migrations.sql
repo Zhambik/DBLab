@@ -1,17 +1,13 @@
 
 
-
-
- CREATE SEQUENCE teams_team_id_seq;
+CREATE SEQUENCE teams_team_id_seq;
 CREATE TABLE teams (
     team_id INT DEFAULT nextval('teams_team_id_seq')  PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
     country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
--- drop table teams;
  
--- drop SEQUENCE teams_team_id_seq; 
 INSERT INTO teams (team_id, name, country)
 VALUES
 (1,'Manchester City', 'England'),
@@ -26,10 +22,6 @@ VALUES
 (10,'Napoli', 'Italy');
 
 SELECT setval('teams_team_id_seq', (SELECT MAX(team_id)  FROM teams));
--- INSERT INTO teams (name, country)
--- VALUES
--- ('a','a');
-
 
 
 create SEQUENCE players_player_id_seq;
@@ -101,11 +93,10 @@ VALUES
 (4,4, 4, '2016-01-07', '2024-08-26','Assistant'),
 (5,6, 8, '2021-07-30', '2024-08-26','Head Coach'),
 (6,6, 6, '2019-10-26', '2024-08-26','Head Coach'),
-(7,7, 7, '2014-10-26', '2024-08-26','Head Coach'),
-(8,5, 2, '2014-10-26', '2024-08-26','Head Coach'),
-(9,9, 9, '2024-10-26', '2024-08-26','Head Coach'),
-(10,10, 10,'2019-9-26','2024-08-15','Head Coach');
-
+(7,5, 2, '2014-10-26', '2024-08-26','Head Coach'),
+(8,9, 9, '2024-10-26', '2024-08-26','Head Coach'),
+(9,10, 10,'2019-9-26','2024-08-15','Head Coach'),
+(10,11,11,'2023-07-05',NULL,'Head Coach');
 SELECT setval('team_coaches_id_seq', (SELECT MAX(team_coaches_id)  FROM team_coaches));
 create SEQUENCE matches_match_id_seq;
 CREATE TABLE matches (
@@ -149,4 +140,5 @@ SELECT setval('matches_match_id_seq', (SELECT MAX(match_id)  FROM matches));
 -- JOIN 
 --     coaches AS c ON tc.coach_id = c.coach_id
 -- WHERE 
---     c.coach_id = 8;
+--     c.name='Luis';
+
