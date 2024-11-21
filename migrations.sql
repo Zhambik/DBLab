@@ -1,4 +1,8 @@
 
+
+
+
+ CREATE SEQUENCE teams_team_id_seq;
 CREATE TABLE teams (
     team_id INT DEFAULT nextval('teams_team_id_seq')  PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
@@ -6,7 +10,7 @@ CREATE TABLE teams (
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
 -- drop table teams;
- CREATE SEQUENCE teams_team_id_seq; 
+ 
 -- drop SEQUENCE teams_team_id_seq; 
 INSERT INTO teams (team_id, name, country)
 VALUES
