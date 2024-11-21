@@ -1,5 +1,3 @@
-
-
 CREATE SEQUENCE teams_team_id_seq;
 CREATE TABLE teams (
     team_id INT DEFAULT nextval('teams_team_id_seq')  PRIMARY KEY ,
@@ -51,6 +49,7 @@ VALUES
 SELECT setval('players_player_id_seq', (SELECT MAX(player_id)  FROM players));
 
 create SEQUENCE coaches_coach_id_seq;
+
 CREATE TABLE coaches (
     coach_id INT DEFAULT nextval('coaches_coach_id_seq') PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
@@ -97,7 +96,10 @@ VALUES
 (8,9, 9, '2024-10-26', '2024-08-26','Head Coach'),
 (9,10, 10,'2019-9-26','2024-08-15','Head Coach'),
 (10,11,11,'2023-07-05',NULL,'Head Coach');
+
+
 SELECT setval('team_coaches_id_seq', (SELECT MAX(team_coaches_id)  FROM team_coaches));
+
 create SEQUENCE matches_match_id_seq;
 CREATE TABLE matches (
     match_id INT DEFAULT nextval('matches_match_id_seq') PRIMARY KEY,
@@ -126,19 +128,4 @@ VALUES
 (10,6, 10, 1, 2, '2024-11-19', 'Serie A');
 
 SELECT setval('matches_match_id_seq', (SELECT MAX(match_id)  FROM matches));
-
--- SELECT 
---     c.name,
---     c.surname,
---     t.name AS team_name,
---     start_date,
---     end_date
--- FROM 
---     teams AS t
--- JOIN 
---     team_coaches AS tc ON t.team_id = tc.team_id
--- JOIN 
---     coaches AS c ON tc.coach_id = c.coach_id
--- WHERE 
---     c.name='Luis';
 
