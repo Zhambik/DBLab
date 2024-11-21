@@ -1,8 +1,6 @@
 
 
-
-
- CREATE SEQUENCE teams_team_id_seq;
+CREATE SEQUENCE teams_team_id_seq;
 CREATE TABLE teams (
     team_id INT DEFAULT nextval('teams_team_id_seq')  PRIMARY KEY ,
     name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
