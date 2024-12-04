@@ -1,11 +1,15 @@
 CREATE SEQUENCE teams_team_id_seq;
+
 CREATE TABLE teams (
-    team_id INT DEFAULT nextval('teams_team_id_seq')  PRIMARY KEY ,
-    name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
-    country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
+    team_id INT DEFAULT nextval('teams_team_id_seq') PRIMARY KEY,
+    name VARCHAR(64) NOT NULL 
+        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
+    country VARCHAR(64) NOT NULL 
+        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
- 
+
+
 INSERT INTO teams (team_id, name, country)
 VALUES
 (1,'Manchester City', 'England'),
@@ -25,13 +29,16 @@ SELECT setval('teams_team_id_seq', (SELECT MAX(team_id)  FROM teams));
 create SEQUENCE players_player_id_seq;
 CREATE TABLE players (
     player_id INT DEFAULT nextval('players_player_id_seq') PRIMARY KEY,
-    name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
-    surname VARCHAR(64) NOT NULL CHECK (surname <> '' AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
-    country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
-    position VARCHAR(16) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
-    team_id INT,
-    FOREIGN KEY (team_id) REFERENCES teams(team_id),
-    UNIQUE (name, surname, team_id)  -- Уникальность игрока в одной команде
+    name VARCHAR(64) NOT NULL 
+        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
+    surname VARCHAR(64) NOT NULL 
+        CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
+    country VARCHAR(64) NOT NULL 
+        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
+    position VARCHAR(16) NOT NULL 
+        CHECK (position <> '' AND position NOT SIMILAR TO '%[0-9]%'  AND position NOT LIKE '% ' AND position NOT LIKE ' %'),
+    team_id INT NOT NULL,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id)
 );
 
 INSERT INTO players (player_id, name, surname, country, position, team_id)
@@ -50,13 +57,17 @@ SELECT setval('players_player_id_seq', (SELECT MAX(player_id)  FROM players));
 
 create SEQUENCE coaches_coach_id_seq;
 
+
 CREATE TABLE coaches (
-    coach_id INT DEFAULT nextval('coaches_coach_id_seq') PRIMARY KEY ,
-    name VARCHAR(64) NOT NULL CHECK (name <> '' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
-    surname VARCHAR(64) NOT NULL CHECK (surname <> '' AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
-    country VARCHAR(64) NOT NULL CHECK (country <> '' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
-    UNIQUE (name, surname)  
+    coach_id INT DEFAULT nextval('coaches_coach_id_seq') PRIMARY KEY,
+    name VARCHAR(64) NOT NULL 
+        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
+    surname VARCHAR(64) NOT NULL 
+        CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
+    country VARCHAR(64) NOT NULL 
+        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %')
 );
+
 
 INSERT INTO coaches (coach_id, name, surname, country)
 VALUES
@@ -72,43 +83,48 @@ VALUES
 (10,'Luciano', 'Spalletti', 'Italy');
 SELECT setval('coaches_coach_id_seq', (SELECT MAX(coach_id)  FROM coaches));
 
-create SEQUENCE team_coaches_id_seq;
-CREATE TABLE team_coaches (
-    team_coaches_id INT DEFAULT nextval('team_coaches_id_seq') PRIMARY KEY ,
+CREATE SEQUENCE team_coaches_id_seq;
+
+CREATE TABLE team_coaches ( 
+    team_coaches_id INT DEFAULT nextval('team_coaches_id_seq') PRIMARY KEY,
     team_id INT NOT NULL,
     coach_id INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    job_title VARCHAR(64) NOT NULL CHECK (job_title <> '' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %'),
+    start_date DATE NOT NULL CHECK (start_date <= CURRENT_DATE),
+    end_date DATE CHECK (end_date <= CURRENT_DATE),
+    job_title VARCHAR(64) NOT NULL 
+        CHECK (job_title <> '' AND job_title NOT SIMILAR TO '%[0-9]%' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %'),
     FOREIGN KEY (team_id) REFERENCES teams(team_id),
     FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
 );
+
 
 INSERT INTO team_coaches (team_coaches_id ,team_id, coach_id,start_date, end_date, job_title)
 VALUES
 (1,7, 7, '2024-08-26',NULL, 'Head Coach'),
 (2,8, 8, '2013-11-27', '2015-08-26','Head Coach'),
-(3,1, 3, '2023-06-12', '2024-12-26','Head Coach'),
+(3,1, 3, '2023-06-12', '2024-11-25','Head Coach'),
 (4,4, 4, '2016-01-07', '2024-08-26','Assistant'),
 (5,6, 8, '2021-07-30', '2024-08-26','Head Coach'),
 (6,6, 6, '2019-10-26', '2024-08-26','Head Coach'),
 (7,5, 2, '2014-10-26', '2024-08-26','Head Coach'),
 (8,9, 9, '2024-10-26', '2024-08-26','Head Coach'),
-(9,10, 10,'2019-9-26','2024-08-15','Head Coach'),
-(10,11,11,'2023-07-05',NULL,'Head Coach');
+(9,10, 10,'2019-9-26','2024-08-15','Head Coach');
+
 
 
 SELECT setval('team_coaches_id_seq', (SELECT MAX(team_coaches_id)  FROM team_coaches));
 
 create SEQUENCE matches_match_id_seq;
+
 CREATE TABLE matches (
     match_id INT DEFAULT nextval('matches_match_id_seq') PRIMARY KEY,
     team_1_id INT NOT NULL,
     team_2_id INT NOT NULL,
     team_1_goals INT DEFAULT 0 CHECK (team_1_goals >= 0),
     team_2_goals INT DEFAULT 0 CHECK (team_2_goals >= 0),
-    match_date DATE NOT NULL,
-    tournament VARCHAR(64) NOT NULL CHECK (tournament <> '' AND tournament NOT LIKE '% ' AND tournament NOT LIKE ' %'),
+    match_date DATE NOT NULL CHECK (match_date <= CURRENT_DATE),
+    tournament VARCHAR(64) NOT NULL 
+        CHECK (tournament <> '' AND tournament !~ '^[0-9]+$' AND tournament NOT LIKE '% ' AND tournament NOT LIKE ' %'),
     FOREIGN KEY (team_1_id) REFERENCES teams(team_id),
     FOREIGN KEY (team_2_id) REFERENCES teams(team_id),
     CHECK (team_1_id <> team_2_id)  -- Команда не может играть сама с собой
@@ -128,4 +144,6 @@ VALUES
 (10,6, 10, 1, 2, '2024-11-19', 'Serie A');
 
 SELECT setval('matches_match_id_seq', (SELECT MAX(match_id)  FROM matches));
+
+
 
