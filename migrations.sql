@@ -18,7 +18,7 @@ VALUES
 (4,'Liverpool', 'England'),
 (5,'Inter-Miami', 'USA'),
 (6,'Bayern Munich', 'Germany'),
-(7,'Barcelona', 'Spain'),
+(7,'Barcelona', 'Spain'), 
 (8,'Real Madrid', 'Spain'),
 (9,'Aston Villa', 'England'),
 (10,'Napoli', 'Italy');
@@ -37,8 +37,8 @@ CREATE TABLE players (
         CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
     position VARCHAR(16) NOT NULL 
         CHECK (position <> '' AND position NOT SIMILAR TO '%[0-9]%'  AND position NOT LIKE '% ' AND position NOT LIKE ' %'),
-    team_id INT NOT NULL,
-    FOREIGN KEY (team_id) REFERENCES teams(team_id)
+    team_id INT,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
 );
 
 INSERT INTO players (player_id, name, surname, country, position, team_id)
@@ -87,14 +87,14 @@ CREATE SEQUENCE team_coaches_id_seq;
 
 CREATE TABLE team_coaches ( 
     team_coaches_id INT DEFAULT nextval('team_coaches_id_seq') PRIMARY KEY,
-    team_id INT NOT NULL,
+    team_id INT,
     coach_id INT NOT NULL,
     start_date DATE NOT NULL CHECK (start_date <= CURRENT_DATE),
     end_date DATE CHECK (end_date <= CURRENT_DATE),
     job_title VARCHAR(64) NOT NULL 
         CHECK (job_title <> '' AND job_title NOT SIMILAR TO '%[0-9]%' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %'),
-    FOREIGN KEY (team_id) REFERENCES teams(team_id),
-    FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ,
+    FOREIGN KEY (coach_id) REFERENCES coaches(coach_id) 
 );
 
 
@@ -125,8 +125,8 @@ CREATE TABLE matches (
     match_date DATE NOT NULL CHECK (match_date <= CURRENT_DATE),
     tournament VARCHAR(64) NOT NULL 
         CHECK (tournament <> '' AND tournament !~ '^[0-9]+$' AND tournament NOT LIKE '% ' AND tournament NOT LIKE ' %'),
-    FOREIGN KEY (team_1_id) REFERENCES teams(team_id),
-    FOREIGN KEY (team_2_id) REFERENCES teams(team_id),
+    FOREIGN KEY (team_1_id) REFERENCES teams(team_id) ,
+    FOREIGN KEY (team_2_id) REFERENCES teams(team_id) ,
     CHECK (team_1_id <> team_2_id)  -- Команда не может играть сама с собой
 );
 
