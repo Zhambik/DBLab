@@ -290,6 +290,7 @@ function main() {
                 $matches = $crud->retrieveAll();
                 foreach ($matches as $match) {
                     echo "Match ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
+                    echo str_repeat('-', 50) . PHP_EOL;
                 }
                 break;
 
@@ -304,12 +305,14 @@ function main() {
 
             case '4':
                 $id = readline("Enter match ID to update: ");
-                if ($crud->retrieve($id)) {
+                if ($match = $crud->retrieve($id)) {
+                    echo "\nMatch ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
                     $team_1_id = readline("Enter new team 1 ID: ");
                     $team_2_id = readline("Enter new team 2 ID: ");
                     $team_1_goals = readline("Enter new team 1 goals: ");
                     $team_2_goals = readline("Enter new team 2 goals: ");
                     $match_date = readline("Enter new match date (YYYY-MM-DD): ");
+                    
                     $tournament = readline("Enter new tournament name: ");
                     try {
                         $crud->update($id, $team_1_id, $team_2_id, $team_1_goals, $team_2_goals, $match_date, $tournament);
