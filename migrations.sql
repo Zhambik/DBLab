@@ -3,9 +3,9 @@ CREATE SEQUENCE teams_team_id_seq;
 CREATE TABLE teams (
     team_id INT DEFAULT nextval('teams_team_id_seq') PRIMARY KEY,
     name VARCHAR(64) NOT NULL 
-        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%' AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
+        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%' AND name NOT LIKE '% ' AND name NOT LIKE ' %' AND name ~ '^[A-Za-z  -]+$'),
     country VARCHAR(64) NOT NULL 
-        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%' AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
+        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%' AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z  -]+$'),
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
 
@@ -30,13 +30,13 @@ create SEQUENCE players_player_id_seq;
 CREATE TABLE players (
     player_id INT DEFAULT nextval('players_player_id_seq') PRIMARY KEY,
     name VARCHAR(64) NOT NULL 
-        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
+        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %' AND name ~ '^[A-Za-z -]+$'),
     surname VARCHAR(64) NOT NULL 
-        CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
+        CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %' AND surname  ~ '^[A-Za-z -]+$'),
     country VARCHAR(64) NOT NULL 
-        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %'),
+        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z -]+$'),
     position VARCHAR(16) NOT NULL 
-        CHECK (position <> '' AND position NOT SIMILAR TO '%[0-9]%'  AND position NOT LIKE '% ' AND position NOT LIKE ' %'),
+        CHECK (position <> '' AND position NOT SIMILAR TO '%[0-9]%'  AND position NOT LIKE '% ' AND position NOT LIKE ' %' AND position ~ '^[A-Za-z -]+$'),
     team_id INT,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
 );
@@ -47,7 +47,7 @@ VALUES
 (2,'Lionel', 'Messi', 'Argentina', 'Forward', 5),
 (3,'Kai', 'Haverts', 'Germany', 'Forward', 2),
 (4,'Mohamed', 'Salah', 'Egypt', 'Forward', 4),
-(5,'Kylian', 'Mbappé', 'France', 'Forward', 8),
+(5,'Kylian', 'Mbappe', 'France', 'Forward', 8),
 (6,'Ollie', 'Watkins', 'Portugal', 'Forward', 9),
 (7,'Dani', 'Olmo', 'Spain', 'Midfielder', 7),
 (8,'Harry', 'Kane', 'England', 'Forward', 6),
@@ -61,11 +61,11 @@ create SEQUENCE coaches_coach_id_seq;
 CREATE TABLE coaches (
     coach_id INT DEFAULT nextval('coaches_coach_id_seq') PRIMARY KEY,
     name VARCHAR(64) NOT NULL 
-        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %'),
+        CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %' AND name ~ '^[A-Za-z -]+$'),
     surname VARCHAR(64) NOT NULL 
-        CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %'),
+        CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %' AND surname ~ '^[A-Za-z -]+$'),
     country VARCHAR(64) NOT NULL 
-        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %')
+        CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z -]+$')
 );
 
 
@@ -74,7 +74,7 @@ VALUES
 (1,'Pep', 'Guardiola', 'Spain'),
 (2,'Mikel', 'Arteta', 'Spain'),
 (3,'Juanma', 'Lillo', 'Spain'),
-(4,'Jürgen', 'Klopp', 'Germany'),
+(4,'Jurgen', 'Klopp', 'Germany'),
 (5,'Gerardo', 'Martino', 'Argentina'),
 (6,'Vincent', 'Kompany', 'Belgium'),
 (7,'Hansi', 'Flik', 'Germany'),
@@ -92,7 +92,7 @@ CREATE TABLE team_coaches (
     start_date DATE NOT NULL CHECK (start_date <= CURRENT_DATE),
     end_date DATE CHECK (end_date <= CURRENT_DATE),
     job_title VARCHAR(64) NOT NULL 
-        CHECK (job_title <> '' AND job_title NOT SIMILAR TO '%[0-9]%' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %'),
+        CHECK (job_title <> '' AND job_title NOT SIMILAR TO '%[0-9]%' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %' AND job_title ~ '^[A-Za-z -]+$'),
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ,
     FOREIGN KEY (coach_id) REFERENCES coaches(coach_id) 
 );
@@ -124,7 +124,7 @@ CREATE TABLE matches (
     team_2_goals INT DEFAULT 0 CHECK (team_2_goals >= 0),
     match_date DATE NOT NULL CHECK (match_date <= CURRENT_DATE),
     tournament VARCHAR(64) NOT NULL 
-        CHECK (tournament <> '' AND tournament !~ '^[0-9]+$' AND tournament NOT LIKE '% ' AND tournament NOT LIKE ' %'),
+        CHECK (tournament <> '' AND tournament !~ '^[0-9]+$' AND tournament NOT LIKE '% ' AND tournament NOT LIKE ' %' AND tournament ~ '^[A-Za-z -]+$'),
     FOREIGN KEY (team_1_id) REFERENCES teams(team_id) ,
     FOREIGN KEY (team_2_id) REFERENCES teams(team_id) ,
     CHECK (team_1_id <> team_2_id)  -- Команда не может играть сама с собой
