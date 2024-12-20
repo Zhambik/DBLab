@@ -172,8 +172,8 @@ class MatchCRUD {
         // Если поле пустое, использовать текущее значение из базы
         $team_1_id = !empty($team_1_id) ? $team_1_id : $currentData['team_1_id'];
         $team_2_id = !empty($team_2_id) ? $team_2_id : $currentData['team_2_id'];
-        $team_1_goals = !empty($team_1_goals) ? intval($team_1_goals) : $currentData['team_1_goals'];
-        $team_2_goals = !empty($team_2_goals) ? intval($team_2_goals) : $currentData['team_2_goals'];
+        $team_1_goals = !empty($team_1_goals) ? $team_1_goals : $currentData['team_1_goals'];
+        $team_2_goals = !empty($team_2_goals) ? $team_2_goals : $currentData['team_2_goals'];
         $match_date = !empty($match_date) ? $match_date : $currentData['match_date'];
         $tournament = !empty($tournament) ? $tournament : $currentData['tournament'];
 
@@ -271,19 +271,28 @@ function main() {
                 foreach ($teams as $team) {
                     echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
                 }
-                $team_1_id = readline("\nEnter team 1 ID: ");
-                $team_2_id = readline("Enter team 2 ID: ");
-                $team_1_goals = readline("Enter team 1 goals(default: 0): ");
-                $team_2_goals = readline("Enter team 2 goals(default: 0): ");
-                $match_date = readline("Enter match date (YYYY-MM-DD): ");
-                $tournament = readline("Enter tournament name: ");
+                while(true){
+                    $team_1_id = readline("\nEnter team 1 ID: ");
+                    $team_2_id = readline("Enter team 2 ID: ");
+                    $team_1_goals = readline("Enter team 1 goals(default: 0): ");
+                    $team_2_goals = readline("Enter team 2 goals(default: 0): ");
+                    $match_date = readline("Enter match date (YYYY-MM-DD): ");
+                    $tournament = readline("Enter tournament name: ");
 
-                try {
-                    $crud->create($team_1_id, $team_2_id, $team_1_goals, $team_2_goals, $match_date, $tournament);
-                    echo "Match created successfully.\n";
-                } catch (InvalidArgumentException $e) {
-                    echo "Error: " . $e->getMessage() . "\n";
+                    try {
+                        $crud->create($team_1_id, $team_2_id, $team_1_goals, $team_2_goals, $match_date, $tournament);
+                        echo "Match created successfully.\n";
+                        break;
+                    } catch (InvalidArgumentException $e) {
+                        echo "Error: " . $e->getMessage() . "\n";
+                        $retry = readline("Do you want to try again? (yes/no): ");
+                        if (strtolower($retry) !== 'yes') {
+                            echo "Update canceled.\n";
+                            break;
+                        }
+                    }
                 }
+                
                 break;
 
             case '2':
@@ -307,22 +316,27 @@ function main() {
                 $id = readline("Enter match ID to update: ");
                 if ($match = $crud->retrieve($id)) {
                     echo "\nMatch ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
-                    $team_1_id = readline("Enter new team 1 ID: ");
-                    $team_2_id = readline("Enter new team 2 ID: ");
-                    $team_1_goals = readline("Enter new team 1 goals: ");
-                    $team_2_goals = readline("Enter new team 2 goals: ");
-                    $match_date = readline("Enter new match date (YYYY-MM-DD): ");
-                    
-                    $tournament = readline("Enter new tournament name: ");
-                    try {
-                        $crud->update($id, $team_1_id, $team_2_id, $team_1_goals, $team_2_goals, $match_date, $tournament);
-                        echo "Match updated.\n";
-                    } catch (InvalidArgumentException $e) {
-                        echo "Error: " . $e->getMessage() . "\n";
-                    }
+                    while(true){
+                        $team_1_id = readline("Enter new team 1 ID: ");
+                        $team_2_id = readline("Enter new team 2 ID: ");
+                        $team_1_goals = readline("Enter new team 1 goals: ");
+                        $team_2_goals = readline("Enter new team 2 goals: ");
+                        $match_date = readline("Enter new match date (YYYY-MM-DD): ");
                         
-                
-                    break;         
+                        $tournament = readline("Enter new tournament name: ");
+                        try {
+                            $crud->update($id, $team_1_id, $team_2_id, $team_1_goals, $team_2_goals, $match_date, $tournament);
+                            echo "Match updated.\n";
+                            break;
+                        } catch (InvalidArgumentException $e) {
+                            echo "Error: " . $e->getMessage() . "\n";
+                            $retry = readline("Do you want to try again? (yes/no): ");
+                            if (strtolower($retry) !== 'yes') {
+                                echo "Update canceled.\n";
+                                break;
+                            }
+                        }
+                    }
                 }else {
                     echo "Match not found.\n";
                 }
