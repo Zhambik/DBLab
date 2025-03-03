@@ -243,6 +243,47 @@ class MatchCRUD {
         $stmt = $this->pdo->prepare("DELETE FROM matches WHERE match_id IN ($placeholders)");
         $stmt->execute($ids);
     }
+
+    public function displayTable(array $data){
+
+        if (empty($data)) {
+            echo "No data available.\n";
+            return;
+        }
+
+        if (!is_array(reset($data))){
+            $data = [$data];
+        }
+        // Получаем заголовки
+        $headers = array_keys(reset($data));
+
+        // Рассчитываем ширину колонок для выравнивания
+        $columnWidths = [];
+        foreach ($headers as $header) {
+            $columnWidths[$header] = strlen($header);
+        }
+
+        foreach ($data as $row) {
+            foreach ($row as $key => $value) {
+                $columnWidths[$key] = max($columnWidths[$key], strlen((string)$value));
+            }
+        }
+
+        // вывод заголовков
+        echo "\n";
+        foreach ($headers as $header) {
+            echo str_pad($header, $columnWidths[$header] + 3);
+        }
+        echo "\n" . str_repeat('-', array_sum($columnWidths) + count($columnWidths) * 2) . "\n";
+
+        // вывод строк данных
+        foreach ($data as $row) {
+            foreach ($headers as $header) {
+                echo str_pad($row[$header] ?? '', $columnWidths[$header] + 3);
+            }
+            echo "\n";
+        }
+    }
     
 }
 
@@ -250,11 +291,11 @@ function main() {
 
     // Конфигурация базы данных
     $dbConfig = [
-        'host' => 'dpg-ct39mtlumphs73dq6no0-a.oregon-postgres.render.com',
+        'host' => 'dpg-cup84nhopnds7391v3s0-a.oregon-postgres.render.com',
         'port' => '5432',
-        'dbname' => 'zhambal_6ik4',
+        'dbname' => 'db_gmwg',
         'user' => 'zhambal',
-        'password' => 'pBjUfj3bkgFI0uqbU8C7TtQNgL4AWeEC'
+        'password' => 'ocwwkPJQD2SkdTxmbOn9FZjckfe5OwYZ'
     ];
 
     $crud = new MatchCRUD($dbConfig);
@@ -298,18 +339,21 @@ function main() {
 
             case '2':
                 $matches = $crud->retrieveAll();
-                foreach ($matches as $match) {
-                    echo "Match ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
-                    echo str_repeat('-', 50) . PHP_EOL;
-                }
+                $crud->displayTable($matches);
+                
+                // foreach ($matches as $match) {
+                //     echo "Match ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
+                //     echo str_repeat('-', 50) . PHP_EOL;
+                // }
                 break;
 
             case '3':
                 $id = readline("Enter match ID: ");
                 if ($match = $crud->retrieve($id)) {
-                    echo "\nMatch ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
+                    $crud->displayTable($match);
+                    //echo "\nMatch ID: {$match['match_id']}\nTeam 1 ID: {$match['team_1_id']} - Team 2 ID: {$match['team_2_id']}\nTeam 1 name: {$match['team_1_name']} - Team 2 name: {$match['team_2_name']}\nTeam 1 Goals: {$match['team_1_goals']} - Team 2 Goals: {$match['team_2_goals']}\nMatch Date: {$match['match_date']}\nTournament: {$match['tournament']}\n\n";
                 } else {
-                    echo "Match not found.\n";
+                    echo "\nMatch not found.\n";
                 }
                 break;
 

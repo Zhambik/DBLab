@@ -9,12 +9,12 @@ CREATE TABLE teams (
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
 
-
+  
 INSERT INTO teams (team_id, name, country)
 VALUES
 (1,'Manchester City', 'England'),
 (2,'Arsenal', 'England'),
-(3,'Chelsea', 'England'),
+(3,'Chelsea', 'England'), 
 (4,'Liverpool', 'England'),
 (5,'Inter-Miami', 'USA'),
 (6,'Bayern Munich', 'Germany'),
@@ -22,7 +22,7 @@ VALUES
 (8,'Real Madrid', 'Spain'),
 (9,'Aston Villa', 'England'),
 (10,'Napoli', 'Italy');
-
+ 
 SELECT setval('teams_team_id_seq', (SELECT MAX(team_id)  FROM teams));
 
 
@@ -38,7 +38,7 @@ CREATE TABLE players (
     position VARCHAR(16) NOT NULL 
         CHECK (position <> '' AND position NOT SIMILAR TO '%[0-9]%'  AND position NOT LIKE '% ' AND position NOT LIKE ' %' AND position ~ '^[A-Za-z -]+$'),
     team_id INT,
-    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 );
 
 INSERT INTO players (player_id, name, surname, country, position, team_id)
