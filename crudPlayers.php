@@ -60,10 +60,10 @@ class PlayerCRUD {
         // Проверка на пустые поля
         if (empty($name) || empty($surname) || empty($country) || empty($position) || empty($team_id)) {
             throw new InvalidArgumentException("All fields must be filled.");
-        }
+        }  
 
         // Проверка имени
-        $this->validateName($name, "Name");
+        $this->validateName($name, "Name"); 
 
         // Проверка фамилии
         $this->validateName($surname, "Surname");
