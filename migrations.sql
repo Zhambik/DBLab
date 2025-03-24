@@ -107,22 +107,38 @@ CREATE TABLE team_coaches (
     FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
 );
 
-ALTER TABLE team_coaches
-    ADD CONSTRAINT unique_coach_job_in_team 
-        UNIQUE (team_id, coach_id, job_title);
 
--- Подключаем расширение btree_gist (если оно не установлено)
-CREATE EXTENSION IF NOT EXISTS btree_gist;
 
--- Добавляем ограничение на пересечение периодов
+-- Ограничение на уникальность тренера по команде и должности в указанный период
 ALTER TABLE team_coaches
-    ADD CONSTRAINT no_overlapping_periods
-        EXCLUDE USING gist (
-            team_id WITH =,
-            coach_id WITH =,
-            job_title WITH =,
-            daterange(start_date, COALESCE(end_date, start_date), '[]') WITH &&
-        );
+    ADD CONSTRAINT unique_coach_position_period
+    UNIQUE (team_id, coach_id, job_title, start_date, end_date);
+
+-- Функция для проверки пересечения с датой начала работы в новой команде
+CREATE OR REPLACE FUNCTION check_overlap_with_previous_team()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Проверяем, существует ли пересечение с предыдущими записями тренера
+    IF EXISTS (
+        SELECT 1
+        FROM team_coaches tc
+        WHERE tc.coach_id = NEW.coach_id
+        AND tc.team_id <> NEW.team_id  -- Проверяем другие команды
+        AND daterange(tc.start_date, COALESCE(tc.end_date, '9999-12-31'::date), '[]') 
+            && daterange(NEW.start_date, COALESCE(NEW.end_date, '9999-12-31'::date), '[]')  -- Проверка пересечения
+    ) THEN
+        RAISE EXCEPTION 'The coach''s work periods overlap with the new team''s start date.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Создание триггера, который будет проверять пересечения перед вставкой или обновлением
+CREATE TRIGGER check_overlap_trigger
+BEFORE INSERT OR UPDATE ON team_coaches
+FOR EACH ROW
+EXECUTE FUNCTION check_overlap_with_previous_team();
+
 
 
 
