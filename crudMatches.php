@@ -291,11 +291,11 @@ function main() {
 
     // Конфигурация базы данных
     $dbConfig = [
-        'host' => 'dpg-cup84nhopnds7391v3s0-a.oregon-postgres.render.com',
+        'host' => 'dpg-cvgbj5popnds73bh2ci0-a.oregon-postgres.render.com',
         'port' => '5432',
-        'dbname' => 'db_gmwg',
+        'dbname' => 'db_rsn9',
         'user' => 'zhambal',
-        'password' => 'ocwwkPJQD2SkdTxmbOn9FZjckfe5OwYZ'
+        'password' => 'NrVwNsRTvQdqXZ31s5ZfAgHkZDUa3Bqg'
     ];
 
     $crud = new MatchCRUD($dbConfig);

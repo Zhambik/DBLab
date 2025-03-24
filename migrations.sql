@@ -1,3 +1,5 @@
+
+
 CREATE SEQUENCE teams_team_id_seq;
 
 CREATE TABLE teams (
@@ -33,26 +35,29 @@ CREATE TABLE players (
         CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %' AND name ~ '^[A-Za-z -]+$'),
     surname VARCHAR(64) NOT NULL 
         CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %' AND surname  ~ '^[A-Za-z -]+$'),
+    birth_date DATE NOT NULL
+        CHECK(birth_date <= CURRENT_DATE - INTERVAL '16 years'),
     country VARCHAR(64) NOT NULL 
         CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z -]+$'),
     position VARCHAR(16) NOT NULL 
-        CHECK (position <> '' AND position NOT SIMILAR TO '%[0-9]%'  AND position NOT LIKE '% ' AND position NOT LIKE ' %' AND position ~ '^[A-Za-z -]+$'),
+        CHECK (position IN ('Forward', 'Midfielder', 'Defender', 'Goalkeeper')),
     team_id INT,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 );
 
-INSERT INTO players (player_id, name, surname, country, position, team_id)
+INSERT INTO players (player_id, name, surname, birth_date, country, position, team_id)
 VALUES
-(1,'Erling', 'Haaland', 'Norway', 'Forward', 1),
-(2,'Lionel', 'Messi', 'Argentina', 'Forward', 5),
-(3,'Kai', 'Haverts', 'Germany', 'Forward', 2),
-(4,'Mohamed', 'Salah', 'Egypt', 'Forward', 4),
-(5,'Kylian', 'Mbappe', 'France', 'Forward', 8),
-(6,'Ollie', 'Watkins', 'Portugal', 'Forward', 9),
-(7,'Dani', 'Olmo', 'Spain', 'Midfielder', 7),
-(8,'Harry', 'Kane', 'England', 'Forward', 6),
-(9,'Coul', 'Palmer', 'England', 'Midfielder', 3),
-(10,'Khvicha', 'Kvaratskhelia', 'Georgia', 'Forward', 10);
+(1, 'Erling', 'Haaland', '2000-07-21', 'Norway', 'Forward', 1),
+(2, 'Lionel', 'Messi', '1987-06-24', 'Argentina', 'Forward', 5),
+(3, 'Kai', 'Havertz', '1999-06-11', 'Germany', 'Forward', 2),
+(4, 'Mohamed', 'Salah', '1992-06-15', 'Egypt', 'Forward', 4),
+(5, 'Kylian', 'Mbappe', '1998-12-20', 'France', 'Forward', 8),
+(6, 'Ollie', 'Watkins', '1995-12-30', 'England', 'Forward', 9),
+(7, 'Dani', 'Olmo', '1998-05-07', 'Spain', 'Midfielder', 7),
+(8, 'Harry', 'Kane', '1993-07-28', 'England', 'Forward', 6),
+(9, 'Cole', 'Palmer', '2002-05-06', 'England', 'Midfielder', 3),
+(10, 'Khvicha', 'Kvaratskhelia', '2001-02-12', 'Georgia', 'Forward', 10);
+
 SELECT setval('players_player_id_seq', (SELECT MAX(player_id)  FROM players));
 
 create SEQUENCE coaches_coach_id_seq;
@@ -64,23 +69,26 @@ CREATE TABLE coaches (
         CHECK (name <> '' AND name NOT SIMILAR TO '%[0-9]%'  AND name NOT LIKE '% ' AND name NOT LIKE ' %' AND name ~ '^[A-Za-z -]+$'),
     surname VARCHAR(64) NOT NULL 
         CHECK (surname <> '' AND surname NOT SIMILAR TO '%[0-9]%'  AND surname NOT LIKE '% ' AND surname NOT LIKE ' %' AND surname ~ '^[A-Za-z -]+$'),
+    birth_date DATE NOT NULL
+        CHECK(birth_date <= CURRENT_DATE - INTERVAL '16 years'),
     country VARCHAR(64) NOT NULL 
         CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z -]+$')
 );
 
 
-INSERT INTO coaches (coach_id, name, surname, country)
+INSERT INTO coaches (coach_id, name, surname,birth_date ,country)
 VALUES
-(1,'Pep', 'Guardiola', 'Spain'),
-(2,'Mikel', 'Arteta', 'Spain'),
-(3,'Juanma', 'Lillo', 'Spain'),
-(4,'Jurgen', 'Klopp', 'Germany'),
-(5,'Gerardo', 'Martino', 'Argentina'),
-(6,'Vincent', 'Kompany', 'Belgium'),
-(7,'Hansi', 'Flik', 'Germany'),
-(8,'Carlo', 'Ancelotti', 'Italy'),
-(9,'Unai', 'Emery', 'Spain'),
-(10,'Luciano', 'Spalletti', 'Italy');
+(1, 'Pep', 'Guardiola', '1971-01-18', 'Spain'),
+(2, 'Mikel', 'Arteta', '1982-03-26', 'Spain'),
+(3, 'Juanma', 'Lillo', '1965-11-02', 'Spain'),
+(4, 'Jurgen', 'Klopp', '1967-06-16', 'Germany'),
+(5, 'Gerardo', 'Martino', '1962-11-20', 'Argentina'),
+(6, 'Vincent', 'Kompany', '1986-04-10', 'Belgium'),
+(7, 'Hansi', 'Flik', '1965-02-24', 'Germany'),
+(8, 'Carlo', 'Ancelotti', '1959-06-10', 'Italy'),
+(9, 'Unai', 'Emery', '1971-11-03', 'Spain'),
+(10, 'Luciano', 'Spalletti', '1959-03-07', 'Italy');
+
 SELECT setval('coaches_coach_id_seq', (SELECT MAX(coach_id)  FROM coaches));
 
 CREATE SEQUENCE team_coaches_id_seq;
@@ -90,12 +98,32 @@ CREATE TABLE team_coaches (
     team_id INT,
     coach_id INT NOT NULL,
     start_date DATE NOT NULL CHECK (start_date <= CURRENT_DATE),
-    end_date DATE CHECK (end_date <= CURRENT_DATE),
+    end_date DATE CHECK (end_date <= CURRENT_DATE AND end_date >= start_date),
     job_title VARCHAR(64) NOT NULL 
-        CHECK (job_title <> '' AND job_title NOT SIMILAR TO '%[0-9]%' AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %' AND job_title ~ '^[A-Za-z -]+$'),
-    FOREIGN KEY (team_id) REFERENCES teams(team_id) ,
-    FOREIGN KEY (coach_id) REFERENCES coaches(coach_id) 
+        CHECK (job_title <> '' AND job_title NOT SIMILAR TO '%[0-9]%' 
+               AND job_title NOT LIKE '% ' AND job_title NOT LIKE ' %' 
+               AND job_title ~ '^[A-Za-z -]+$'),
+    FOREIGN KEY (team_id) REFERENCES teams(team_id),
+    FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
 );
+
+ALTER TABLE team_coaches
+    ADD CONSTRAINT unique_coach_job_in_team 
+        UNIQUE (team_id, coach_id, job_title);
+
+-- Подключаем расширение btree_gist (если оно не установлено)
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+-- Добавляем ограничение на пересечение периодов
+ALTER TABLE team_coaches
+    ADD CONSTRAINT no_overlapping_periods
+        EXCLUDE USING gist (
+            team_id WITH =,
+            coach_id WITH =,
+            job_title WITH =,
+            daterange(start_date, COALESCE(end_date, start_date), '[]') WITH &&
+        );
+
 
 
 INSERT INTO team_coaches (team_coaches_id ,team_id, coach_id,start_date, end_date, job_title)
