@@ -115,7 +115,7 @@ ALTER TABLE team_coaches
     UNIQUE (team_id, coach_id, job_title, start_date, end_date);
 
 -- Функция для проверки пересечения с датой начала работы в новой команде
-CREATE OR REPLACE FUNCTION check_overlap_with_previous_team()
+CREATE FUNCTION check_overlap_with_previous_team()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Проверяем, существует ли пересечение с предыдущими записями тренера
