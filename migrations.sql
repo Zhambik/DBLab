@@ -114,11 +114,21 @@ ALTER TABLE team_coaches
 
 -- Добавление ограничения на пересечение периодов работы тренера в разных командах
 ALTER TABLE team_coaches
-    ADD CONSTRAINT no_overlap_periods
+    ADD CONSTRAINT no_overlap_coach_periods
     EXCLUDE USING gist (
         coach_id WITH =,
+        job_title WITH =,
         daterange(start_date, COALESCE(end_date, '9999-12-31'::date), '[]') WITH &&
     );
+
+ALTER TABLE team_coaches
+ADD CONSTRAINT no_overlapping_periods
+EXCLUDE USING gist (
+    team_id WITH =,
+    coach_id WITH =,
+    job_title WITH =,
+    daterange(start_date, COALESCE(end_date, '9999-12-31'::date), '[]') WITH &&
+);
 
 
 
