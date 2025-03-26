@@ -107,12 +107,19 @@ CREATE TABLE team_coaches (
     FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
 );
 
-
-
 -- Ограничение на уникальность тренера по команде и должности в указанный период
 ALTER TABLE team_coaches
     ADD CONSTRAINT unique_coach_position_period
     UNIQUE (team_id, coach_id, job_title, start_date, end_date);
+
+-- Добавление ограничения на пересечение периодов работы тренера в разных командах
+ALTER TABLE team_coaches
+    ADD CONSTRAINT no_overlap_periods
+    EXCLUDE USING gist (
+        coach_id WITH =,
+        daterange(start_date, COALESCE(end_date, '9999-12-31'::date), '[]') WITH &&
+    );
+
 
 
 INSERT INTO team_coaches (team_coaches_id ,team_id, coach_id,start_date, end_date, job_title)
