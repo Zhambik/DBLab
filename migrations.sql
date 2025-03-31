@@ -11,6 +11,8 @@ CREATE TABLE teams (
     UNIQUE (name, country)  -- Уникальная комбинация имени и страны для команды
 );
 
+CREATE UNIQUE INDEX teams_name_country_unique ON teams (LOWER(name), LOWER(country));
+
   
 INSERT INTO teams (team_id, name, country)
 VALUES
@@ -58,6 +60,9 @@ VALUES
 (9, 'Cole', 'Palmer', '2002-05-06', 'England', 'Midfielder', 3),
 (10, 'Khvicha', 'Kvaratskhelia', '2001-02-12', 'Georgia', 'Forward', 10);
 
+ALTER TABLE players
+ADD CONSTRAINT unique_players_birth_date UNIQUE (name, surname,country, birth_date);
+
 SELECT setval('players_player_id_seq', (SELECT MAX(player_id)  FROM players));
 
 create SEQUENCE coaches_coach_id_seq;
@@ -74,6 +79,11 @@ CREATE TABLE coaches (
     country VARCHAR(64) NOT NULL 
         CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z -]+$')
 );
+
+ALTER TABLE coaches
+ADD CONSTRAINT unique_birth_date UNIQUE (name, surname,country, birth_date);
+
+
 
 
 INSERT INTO coaches (coach_id, name, surname,birth_date ,country)
@@ -176,6 +186,59 @@ VALUES
 (8,6, 1, 1, 1, '2024-11-17', 'Champions League'),
 (9,5, 2, 3, 1, '2024-11-18', 'Champions League'),
 (10,6, 10, 1, 2, '2024-11-19', 'Serie A');
+
+
+CREATE OR REPLACE FUNCTION check_teams_not_play_same_day()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Проверяем, что ни одна из команд не играет уже в этот день
+    IF EXISTS (
+        SELECT 1
+        FROM matches m
+        WHERE m.match_date = NEW.match_date
+        AND (
+            (m.team_1_id = NEW.team_1_id AND m.team_2_id = NEW.team_2_id)  -- Проверка на те же команды
+            OR
+            (m.team_1_id = NEW.team_2_id AND m.team_2_id = NEW.team_1_id)  -- Проверка на смену местами команд
+        )
+    ) THEN
+        RAISE EXCEPTION 'The teams cannot play in the same day.';
+    END IF;
+
+    -- Проверяем, что команда 1 не играет дважды в тот же день
+    IF EXISTS (
+        SELECT 1
+        FROM matches m
+        WHERE m.match_date = NEW.match_date
+        AND (
+            m.team_1_id = NEW.team_1_id OR m.team_2_id = NEW.team_1_id  -- Проверка для команды 1
+        )
+    ) THEN
+        RAISE EXCEPTION 'Team 1 cannot play more than one match on the same day.';
+    END IF;
+
+    -- Проверяем, что команда 2 не играет дважды в тот же день
+    IF EXISTS (
+        SELECT 1
+        FROM matches m
+        WHERE m.match_date = NEW.match_date
+        AND (
+            m.team_1_id = NEW.team_2_id OR m.team_2_id = NEW.team_2_id  -- Проверка для команды 2
+        )
+    ) THEN
+        RAISE EXCEPTION 'Team 2 cannot play more than one match on the same day.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Создаем триггер, который будет проверять пересечения команд перед вставкой или обновлением
+CREATE TRIGGER check_same_day_match
+BEFORE INSERT OR UPDATE ON matches
+FOR EACH ROW
+EXECUTE FUNCTION check_teams_not_play_same_day();
+
 
 SELECT setval('matches_match_id_seq', (SELECT MAX(match_id)  FROM matches));
 
