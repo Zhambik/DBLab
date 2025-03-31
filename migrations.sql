@@ -47,7 +47,7 @@ CREATE TABLE players (
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 );
 
-CREATE UNIQUE INDEX players_unique ON teams (LOWER(name), LOWER(surname),LOWER(country), LOWER(position));
+CREATE UNIQUE INDEX players_unique ON players (LOWER(name), LOWER(surname), birth_date,LOWER(country), LOWER(position));
 
 
 INSERT INTO players (player_id, name, surname, birth_date, country, position, team_id)
@@ -82,6 +82,9 @@ CREATE TABLE coaches (
     country VARCHAR(64) NOT NULL 
         CHECK (country <> '' AND country NOT SIMILAR TO '%[0-9]%'  AND country NOT LIKE '% ' AND country NOT LIKE ' %' AND country ~ '^[A-Za-z -]+$')
 );
+
+CREATE UNIQUE INDEX coaches_unique ON coaches (LOWER(name), LOWER(surname), birth_date,LOWER(country));
+
 
 ALTER TABLE coaches
 ADD CONSTRAINT unique_birth_date UNIQUE (name, surname,country, birth_date);
@@ -120,28 +123,26 @@ CREATE TABLE team_coaches (
     FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
 );
 
--- Ограничение на уникальность тренера по команде и должности в указанный период
-ALTER TABLE team_coaches
-    ADD CONSTRAINT unique_coach_position_period
-    UNIQUE (team_id, coach_id, job_title, start_date, end_date);
-
--- Добавление ограничения на пересечение периодов работы тренера в разных командах
-ALTER TABLE team_coaches
-    ADD CONSTRAINT no_overlap_coach_periods
-    EXCLUDE USING gist (
-        coach_id WITH =,
-        job_title WITH =,
-        daterange(start_date, COALESCE(end_date, '9999-12-31'::date), '[]') WITH &&
-    );
+-- 1. Проверка, что тренер не может работать в разных командах на любые должности одновременно
 
 ALTER TABLE team_coaches
-ADD CONSTRAINT no_overlapping_periods
-EXCLUDE USING gist (
-    team_id WITH =,
+ADD CONSTRAINT unique_coach_team_dates EXCLUDE USING gist (
     coach_id WITH =,
-    job_title WITH =,
-    daterange(start_date, COALESCE(end_date, '9999-12-31'::date), '[]') WITH &&
+    team_id WITH <>,  -- Проверка на разные команды
+    tsrange(start_date, end_date, '[]') WITH &&
 );
+
+-- 2. Добавляем ограничение EXCLUDE для проверки, что в один и тот же период не будет двух разных тренеров на одной должности в одной команде
+ALTER TABLE team_coaches
+ADD CONSTRAINT unique_position_in_team EXCLUDE USING gist (
+    team_id WITH =,
+    job_title WITH =,
+    tsrange(start_date, end_date, '[]') WITH &&  -- Проверка на пересечение дат
+);
+
+
+
+
 
 
 
@@ -190,57 +191,17 @@ VALUES
 (9,5, 2, 3, 1, '2024-11-18', 'Champions League'),
 (10,6, 10, 1, 2, '2024-11-19', 'Serie A');
 
+ALTER TABLE matches ADD CONSTRAINT no_team_multiple_games_per_day
+EXCLUDE USING GIST (
+    match_date WITH =,
+    team_1_id WITH =,
+    team_2_id WITH =
+);
 
-CREATE OR REPLACE FUNCTION check_teams_not_play_same_day()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Проверяем, что ни одна из команд не играет уже в этот день
-    IF EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE m.match_date = NEW.match_date
-        AND (
-            (m.team_1_id = NEW.team_1_id AND m.team_2_id = NEW.team_2_id)  -- Проверка на те же команды
-            OR
-            (m.team_1_id = NEW.team_2_id AND m.team_2_id = NEW.team_1_id)  -- Проверка на смену местами команд
-        )
-    ) THEN
-        RAISE EXCEPTION 'The teams cannot play in the same day.';
-    END IF;
 
-    -- Проверяем, что команда 1 не играет дважды в тот же день
-    IF EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE m.match_date = NEW.match_date
-        AND (
-            m.team_1_id = NEW.team_1_id OR m.team_2_id = NEW.team_1_id  -- Проверка для команды 1
-        )
-    ) THEN
-        RAISE EXCEPTION 'Team 1 cannot play more than one match on the same day.';
-    END IF;
+CREATE UNIQUE INDEX unique_team_1_per_day ON matches (match_date, team_1_id);
+CREATE UNIQUE INDEX unique_team_2_per_day ON matches (match_date, team_2_id);
 
-    -- Проверяем, что команда 2 не играет дважды в тот же день
-    IF EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE m.match_date = NEW.match_date
-        AND (
-            m.team_1_id = NEW.team_2_id OR m.team_2_id = NEW.team_2_id  -- Проверка для команды 2
-        )
-    ) THEN
-        RAISE EXCEPTION 'Team 2 cannot play more than one match on the same day.';
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Создаем триггер, который будет проверять пересечения команд перед вставкой или обновлением
-CREATE TRIGGER check_same_day_match
-BEFORE INSERT OR UPDATE ON matches
-FOR EACH ROW
-EXECUTE FUNCTION check_teams_not_play_same_day();
 
 
 SELECT setval('matches_match_id_seq', (SELECT MAX(match_id)  FROM matches));
