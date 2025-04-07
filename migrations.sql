@@ -129,7 +129,7 @@ ALTER TABLE team_coaches
 ADD CONSTRAINT unique_coach_team_dates EXCLUDE USING gist (
     coach_id WITH =,
     team_id WITH <>,  -- Проверка на разные команды
-    tsrange(start_date, end_date, '[]') WITH &&
+    tsrange(start_date, end_date, '()') WITH &&
 );
 
 -- 2. Добавляем ограничение EXCLUDE для проверки, что в один и тот же период не будет двух разных тренеров на одной должности в одной команде
@@ -137,13 +137,8 @@ ALTER TABLE team_coaches
 ADD CONSTRAINT unique_position_in_team EXCLUDE USING gist (
     team_id WITH =,
     job_title WITH =,
-    tsrange(start_date, end_date, '[]') WITH &&  -- Проверка на пересечение дат
+    tsrange(start_date, end_date, '()') WITH &&  -- Проверка на пересечение дат
 );
-
-
-
-
-
 
 
 INSERT INTO team_coaches (team_coaches_id ,team_id, coach_id,start_date, end_date, job_title)

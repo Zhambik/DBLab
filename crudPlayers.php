@@ -45,20 +45,43 @@ class PlayerCRUD {
         return true;
     }
 
+    public function validateBirthDate($birth_date) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth_date)) {
+            throw new InvalidArgumentException("Invalid date format. Please enter a date in YYYY-MM-DD format.");
+        }
+        
+        try {
+            $birthDate = new DateTime($birth_date);
+            $currentDate = new DateTime();
+            $age = $currentDate->diff($birthDate)->y;
+            
+            if ($birthDate > $currentDate) {
+                throw new InvalidArgumentException("The birth date cannot be in the future.");
+            }
+            
+            if ($age < 16) {
+                throw new InvalidArgumentException("The player must be at least 16 years old.");
+            }
+            
+        } catch (Exception $e) {
+            throw new InvalidArgumentException("Invalid date: " . $e->getMessage());
+        }
+        
+        return true;
+    }
 
-    
 
     // Создание нового игрока
-    public function create($name, $surname, $country, $position, $team_id) {
-
+    public function create($name, $surname, $birth_date, $country, $position, $team_id) {
         $name = trim($name);
         $surname = trim($surname);
+        $birth_date = trim($birth_date);
         $country = trim($country);
         $position = trim($position);
         $team_id = trim($team_id);
 
         // Проверка на пустые поля
-        if (empty($name) || empty($surname) || empty($country) || empty($position) || empty($team_id)) {
+        if (empty($name) || empty($surname) || empty($birth_date) || empty($country) || empty($position) || empty($team_id)) {
             throw new InvalidArgumentException("All fields must be filled.");
         }  
 
@@ -71,8 +94,10 @@ class PlayerCRUD {
         // Проверка страны
         $this->validateName($country, "Country");
 
+        // Проверка даты рождения
+        $this->validateBirthDate($birth_date);
+
         // Проверка позиции
-        $this->validatePosition($position, "Position");
         if (!$this->validatePosition($position)) {
             throw new InvalidArgumentException("Invalid position. Allowed positions: Goalkeeper, Defender, Midfielder, Forward.");
         }
@@ -86,11 +111,12 @@ class PlayerCRUD {
         }
 
         // Вставка данных в базу
-        $stmt = $this->pdo->prepare("INSERT INTO players (name, surname, country, position, team_id) 
-                                     VALUES (:name, :surname, :country, :position, :team_id)");
+        $stmt = $this->pdo->prepare("INSERT INTO players (name, surname, birth_date, country, position, team_id) 
+                                     VALUES (:name, :surname, :birth_date, :country, :position, :team_id)");
         $stmt->execute([
             'name' => $name,
             'surname' => $surname,
+            'birth_date' => $birth_date,
             'country' => $country,
             'position' => $position,
             'team_id' => $team_id
@@ -103,12 +129,14 @@ class PlayerCRUD {
                                     p.player_id,
                                     p.name,
                                     p.surname,
+                                    p.birth_date,
                                     p.country,
                                     p.position,
                                     p.team_id,
                                     t.name AS team_name
                                 FROM players p
-                                JOIN teams t ON p.team_id = t.team_id;");
+                                JOIN teams t ON p.team_id = t.team_id
+                                ORDER BY p.player_id");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -121,6 +149,7 @@ class PlayerCRUD {
                                     p.player_id,
                                     p.name,
                                     p.surname,
+                                    p.birth_date,
                                     p.country,
                                     p.position,
                                     p.team_id,
@@ -133,13 +162,14 @@ class PlayerCRUD {
     }
 
     // Обновление информации об игроке
-    public function update($id, $name, $surname, $country, $position, $team_id) {
+    public function update($id, $name, $surname, $birth_date, $country, $position, $team_id) {
         // Получение текущих данных записи
         $currentData = $this->retrieve($id);
 
         // Очистка данных
         $name = trim($name);
         $surname = trim($surname);
+        $birth_date = trim($birth_date);
         $country = trim($country);
         $position = trim($position);
         $team_id = trim($team_id);
@@ -147,6 +177,7 @@ class PlayerCRUD {
         // Если поле пустое, использовать текущее значение из базы
         $name = !empty($name) ? $name : $currentData['name'];
         $surname = !empty($surname) ? $surname : $currentData['surname'];
+        $birth_date = !empty($birth_date) ? $birth_date : $currentData['birth_date'];
         $country = !empty($country) ? $country : $currentData['country'];
         $position = !empty($position) ? $position : $currentData['position'];
         $team_id = !empty($team_id) ? $team_id : $currentData['team_id'];
@@ -159,6 +190,9 @@ class PlayerCRUD {
 
         // Проверка страны
         $this->validateName($country, "Country");
+
+        // Проверка даты рождения
+        $this->validateBirthDate($birth_date);
 
         // Проверка на корректность team_id
         if (!preg_match('/^\d+$/', $team_id)) {
@@ -175,13 +209,14 @@ class PlayerCRUD {
 
         // Подготовка и выполнение SQL-запроса
         $stmt = $this->pdo->prepare("UPDATE players 
-                                     SET name = :name, surname = :surname, country = :country, 
-                                         position = :position, team_id = :team_id 
+                                     SET name = :name, surname = :surname, birth_date = :birth_date, 
+                                         country = :country, position = :position, team_id = :team_id 
                                      WHERE player_id = :id");
         $stmt->execute([
             'id' => $id,
             'name' => $name,
             'surname' => $surname,
+            'birth_date' => $birth_date,
             'country' => $country,
             'position' => $position,
             'team_id' => $team_id
@@ -204,16 +239,16 @@ class PlayerCRUD {
         $stmt->execute($ids);
     }
 
-    public function displayTable(array $data){
-
+    public function displayTable(array $data) {
         if (empty($data)) {
             echo "No data available.\n";
             return;
         }
 
-        if (!is_array(reset($data))){
+        if(!is_array(reset($data))){
             $data = [$data];
         }
+        
         // Получаем заголовки
         $headers = array_keys(reset($data));
 
@@ -235,7 +270,8 @@ class PlayerCRUD {
             echo str_pad($header, $columnWidths[$header] + 3);
         }
         echo "\n" . str_repeat('-', array_sum($columnWidths) + count($columnWidths) * 2) . "\n";
-// вывод строк данных
+        
+        // вывод строк данных
         foreach ($data as $row) {
             foreach ($headers as $header) {
                 echo str_pad($row[$header] ?? '', $columnWidths[$header] + 3);
@@ -246,7 +282,6 @@ class PlayerCRUD {
 }
 
 function main() {
-
     // Конфигурация базы данных
     $dbConfig = [
         'host' => 'dpg-cvgbj5popnds73bh2ci0-a.oregon-postgres.render.com',
@@ -267,19 +302,21 @@ function main() {
             case '1':
                 // Вывод списка команд
                 echo "\nAvailable teams:\n";
-                $teams = $crud->getTeams(); // Метод, который возвращает список команд
+                $teams = $crud->getTeams();
                 foreach ($teams as $team) {
                     echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
                 }
-                while(true){
+                
+                while(true) {
                     $name = readline("\nEnter player name: ");
                     $surname = readline("Enter player surname: ");
+                    $birth_date = readline("Enter player birth date (YYYY-MM-DD): ");
                     $country = readline("Enter player country: ");
                     $position = readline("Enter player position (Goalkeeper, Defender, Midfielder, Forward): ");
                     $team_id = readline("Enter team ID: ");
 
                     try {
-                        $crud->create($name, $surname, $country, $position, $team_id);
+                        $crud->create($name, $surname, $birth_date, $country, $position, $team_id);
                         echo "Player created successfully.\n";
                         break;
                     } catch (InvalidArgumentException $e) {
@@ -291,7 +328,6 @@ function main() {
                         }
                     }
                 }
-                
                 break;
 
             case '2':
@@ -311,15 +347,18 @@ function main() {
             case '4':
                 $id = readline("Enter player ID to update: ");
                 if ($player = $crud->retrieve($id)) {
-                    echo "\nPlayer ID: {$player['player_id']}\nName: {$player['name']}\nSurname: {$player['surname']}\nCountry: {$player['country']}\nPosition: {$player['position']}\nTeam ID: {$player['team_id']}\nTeam Name: {$player['team_name']}\n\n";
-                    while(true){
-                        $name = readline("Enter new name: ");
-                        $surname = readline("Enter new surname: ");
-                        $country = readline("Enter new country: ");
-                        $position = readline("Enter new position (Goalkeeper, Defender, Midfielder, Forward): ");
-                        $team_id = readline("Enter new team ID: ");
+                    echo "\nPlayer ID: {$player['player_id']}\nName: {$player['name']}\nSurname: {$player['surname']}\nBirth Date: {$player['birth_date']}\nCountry: {$player['country']}\nPosition: {$player['position']}\nTeam ID: {$player['team_id']}\nTeam Name: {$player['team_name']}\n\n";
+                    
+                    while(true) {
+                        $name = readline("Enter new name (leave empty to keep current): ");
+                        $surname = readline("Enter new surname (leave empty to keep current): ");
+                        $birth_date = readline("Enter new birth date (YYYY-MM-DD, leave empty to keep current): ");
+                        $country = readline("Enter new country (leave empty to keep current): ");
+                        $position = readline("Enter new position (Goalkeeper, Defender, Midfielder, Forward, leave empty to keep current): ");
+                        $team_id = readline("Enter new team ID (leave empty to keep current): ");
+
                         try {
-                            $crud->update($id, $name, $surname, $country, $position, $team_id);
+                            $crud->update($id, $name, $surname, $birth_date, $country, $position, $team_id);
                             echo "Player updated.\n";
                             break;
                         } catch (InvalidArgumentException $e) {
@@ -331,10 +370,9 @@ function main() {
                             }
                         }
                     }
-                }else {
+                } else {
                     echo "Player not found.\n";
                 }
-                    
                 break;
 
             case '5':
@@ -357,12 +395,11 @@ function main() {
                     $nonExistingIds = [];
 
                     foreach ($ids as $id) {
-
                         // Проверяем, существует ли запись с текущим ID
                         if ($crud->retrieve($id)) {
                             $existingIds[] = $id;
                         } else {
-                            $nonExistingIds[] = $id; // Добавляем в массив отсутствующих ID
+                            $nonExistingIds[] = $id;
                         }
                     }
 
@@ -377,7 +414,7 @@ function main() {
                         $crud->deleteMany($existingIds);
                         echo "Players with IDs " . implode(', ', $existingIds) . " have been deleted.\n";
                     }
-                }else { 
+                } else { 
                     echo "No IDs provided.\n"; 
                 } 
                 break;
@@ -390,4 +427,5 @@ function main() {
         }
     }
 }
+
 main();
