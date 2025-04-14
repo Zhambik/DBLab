@@ -47,7 +47,7 @@ CREATE TABLE players (
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 );
 
-CREATE UNIQUE INDEX players_unique ON players (LOWER(name), LOWER(surname), birth_date,LOWER(country), LOWER(position));
+CREATE UNIQUE INDEX players_unique ON players (LOWER(name), LOWER(surname), birth_date,LOWER(country));
 
 
 INSERT INTO players (player_id, name, surname, birth_date, country, position, team_id)

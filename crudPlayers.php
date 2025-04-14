@@ -24,10 +24,30 @@ class PlayerCRUD {
         return $stmt->fetchColumn() > 0;
     }
 
-    public function validatePosition($position) {
-        $validPositions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
-        return in_array($position, $validPositions);
-    } 
+    // public function validatePosition($position) {
+    //     $validPositions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
+    //     return in_array($position, $validPositions);
+    // } 
+
+    public function selectPlayerPosition(): string {
+        $positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
+    
+        while (true) {
+            echo "\nSelect player position:\n";
+            foreach ($positions as $index => $pos) {
+                echo ($index + 1) . ". $pos\n";
+            }
+    
+            $choice = readline("Enter position number (1-4): ");
+    
+            if (ctype_digit($choice) && (int)$choice >= 1 && (int)$choice <= count($positions)) {
+                return $positions[(int)$choice - 1];
+            }
+    
+            echo "Invalid input. Please enter a number between 1 and 4.\n";
+        }
+    }
+    
 
     public function validateName($value, $fieldName) {
         if (empty($value)) {
@@ -40,7 +60,7 @@ class PlayerCRUD {
             throw new InvalidArgumentException("$fieldName cannot start or end with a space.");
         }        
         if (!preg_match('/^[A-Za-z]+(?:[ -][A-Za-z]+)*$/', $value)) {
-            throw new InvalidArgumentException("$fieldName can only contain letters, single spaces or hyphens between words.");
+            throw new InvalidArgumentException("$fieldName can only contain English letters, single spaces or hyphens between words.");
         }        
         return true;
     }
@@ -49,30 +69,57 @@ class PlayerCRUD {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth_date)) {
             throw new InvalidArgumentException("Invalid date format. Please enter a date in YYYY-MM-DD format.");
         }
-        
+    
         try {
-            $birthDate = new DateTime($birth_date);
+            $birthDate = DateTime::createFromFormat('Y-m-d', $birth_date);
+            $errors = DateTime::getLastErrors();
+    
+            // Проверка на реальные ошибки парсинга даты (например, 2002-02-30)
+            if ($birthDate === false || $errors['warning_count'] > 0 || $errors['error_count'] > 0) {
+                throw new InvalidArgumentException("The provided birth date is not a valid calendar date.");
+            }
+    
             $currentDate = new DateTime();
             $age = $currentDate->diff($birthDate)->y;
-            
+    
             if ($birthDate > $currentDate) {
                 throw new InvalidArgumentException("The birth date cannot be in the future.");
             }
-            
+    
             if ($age < 16) {
                 throw new InvalidArgumentException("The player must be at least 16 years old.");
             }
-            
+    
         } catch (Exception $e) {
             throw new InvalidArgumentException("Invalid date: " . $e->getMessage());
         }
-        
+    
         return true;
     }
+    
 
 
     // Создание нового игрока
     public function create($name, $surname, $birth_date, $country, $position, $team_id) {
+        // Приводим к нижнему регистру, как в индексе
+        $nameLower = strtolower($name);
+        $surnameLower = strtolower($surname);
+        $countryLower = strtolower($country);
+
+        // Проверка уникальности
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM players WHERE LOWER(name) = :name AND LOWER(surname) = :surname AND birth_date = :birth_date AND LOWER(country) = :country");
+        $stmt->execute([
+            ':name' => $nameLower,
+            ':surname' => $surnameLower,
+            ':birth_date' => $birth_date,
+            ':country' => $countryLower
+        ]);
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            throw new InvalidArgumentException("Player with the same name, surname, birth date, and country already exists.");
+        }
+
         $name = trim($name);
         $surname = trim($surname);
         $birth_date = trim($birth_date);
@@ -97,10 +144,10 @@ class PlayerCRUD {
         // Проверка даты рождения
         $this->validateBirthDate($birth_date);
 
-        // Проверка позиции
-        if (!$this->validatePosition($position)) {
-            throw new InvalidArgumentException("Invalid position. Allowed positions: Goalkeeper, Defender, Midfielder, Forward.");
-        }
+        // // Проверка позиции
+        // if (!$this->validatePosition($position)) {
+        //     throw new InvalidArgumentException("Invalid position. Allowed positions: Goalkeeper, Defender, Midfielder, Forward.");
+        // }
 
         // Проверка team_id
         if (!preg_match('/^\d+$/', $team_id)) {
@@ -163,10 +210,9 @@ class PlayerCRUD {
 
     // Обновление информации об игроке
     public function update($id, $name, $surname, $birth_date, $country, $position, $team_id) {
-        // Получение текущих данных записи
         $currentData = $this->retrieve($id);
 
-        // Очистка данных
+        
         $name = trim($name);
         $surname = trim($surname);
         $birth_date = trim($birth_date);
@@ -175,13 +221,41 @@ class PlayerCRUD {
         $team_id = trim($team_id);
 
         // Если поле пустое, использовать текущее значение из базы
-        $name = !empty($name) ? $name : $currentData['name'];
-        $surname = !empty($surname) ? $surname : $currentData['surname'];
-        $birth_date = !empty($birth_date) ? $birth_date : $currentData['birth_date'];
-        $country = !empty($country) ? $country : $currentData['country'];
-        $position = !empty($position) ? $position : $currentData['position'];
-        $team_id = !empty($team_id) ? $team_id : $currentData['team_id'];
+        $name = $name !== '' ? $name : $currentData['name'];
+        $surname = $surname !== '' ? $surname : $currentData['surname'];
+        $birth_date = $birth_date !== '' ? $birth_date : $currentData['birth_date'];
+        $country = $country !== '' ? $country : $currentData['country'];
+        $position = $position !== '' ? $position : $currentData['position'];
+        $team_id = $team_id !== '' ? $team_id : ($currentData['team_id'] !== null ? $currentData['team_id'] : null);
 
+        //  // Приводим к нижнему регистру, как в индексе
+        $nameLower = strtolower($name);
+        $surnameLower = strtolower($surname);
+        $countryLower = strtolower($country);
+
+        // Проверка уникальности для обновления
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) 
+            FROM players 
+            WHERE LOWER(name) = :name 
+            AND LOWER(surname) = :surname 
+            AND birth_date = :birth_date 
+            AND LOWER(country) = :country 
+            AND player_id <> :id
+        ");
+        $stmt->execute([
+            ':name' => $nameLower,
+            ':surname' => $surnameLower,
+            ':birth_date' => $birth_date,
+            ':country' => $countryLower,
+            ':id' => $id
+        ]);
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            throw new InvalidArgumentException("A player with the same name, surname, birth date, and country already exists.");
+        }
+    
         // Проверка имени
         $this->validateName($name, "Name");
 
@@ -203,9 +277,9 @@ class PlayerCRUD {
             throw new InvalidArgumentException("Team does not exist.");
         }
 
-        if (!$this->validatePosition($position)) {
-            throw new InvalidArgumentException("Invalid position.");
-        }
+        // if (!$this->validatePosition($position)) {
+        //     throw new InvalidArgumentException("Invalid position.");
+        // }
 
         // Подготовка и выполнение SQL-запроса
         $stmt = $this->pdo->prepare("UPDATE players 
@@ -297,23 +371,82 @@ function main() {
         echo "\n1. Create Player\n2. Retrieve All Players\n3. Retrieve Player\n4. Update Player\n5. Delete Player\n6. Delete Many Players\n7. Exit\n";
 
         $choice = readline("Choose an option: ");
-
+        $teams = $crud->getTeams();
         switch ($choice) {
             case '1':
-                // Вывод списка команд
-                echo "\nAvailable teams:\n";
-                $teams = $crud->getTeams();
-                foreach ($teams as $team) {
-                    echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
-                }
+                // // Вывод списка команд
+                // echo "\nAvailable teams:\n";
+                // $teams = $crud->getTeams();
+                // foreach ($teams as $team) {
+                //     echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
+                // }
                 
                 while(true) {
-                    $name = readline("\nEnter player name: ");
-                    $surname = readline("Enter player surname: ");
-                    $birth_date = readline("Enter player birth date (YYYY-MM-DD): ");
-                    $country = readline("Enter player country: ");
-                    $position = readline("Enter player position (Goalkeeper, Defender, Midfielder, Forward): ");
-                    $team_id = readline("Enter team ID: ");
+                    while(true) {
+                        $name = readline("\nEnter player name: ");
+                        try {
+                            $crud->validateName($name, "Name");
+                            break;
+                        } catch (InvalidArgumentException $e) {
+                            echo "Error: " . $e->getMessage() . "\n";
+                        }
+                    }
+                    while(true){
+                        $surname = readline("Enter player surname: ");
+                        try {
+                            $crud->validateName($surname, "Surname"); 
+                            break;
+                        } catch (InvalidArgumentException $e) {
+                            echo "Error: " . $e->getMessage() . "\n";
+                        }
+                    }
+                    while(true){
+                        $birth_date = readline("Enter player birth date (YYYY-MM-DD): ");
+                        try {
+                            $crud->validateBirthDate($birth_date); 
+                            break;
+                        } catch (InvalidArgumentException $e) {
+                            echo "Error: " . $e->getMessage() . "\n";
+                        }
+                    }    
+                    while(true){
+                        $country = readline("Enter player country: ");
+                        try {
+                            $crud->validateName($country, "Country"); 
+                            break;
+                        } catch (InvalidArgumentException $e) {
+                            echo "Error: " . $e->getMessage() . "\n";
+                        }
+                    }
+                    $position = $crud->selectPlayerPosition();
+                    while (true) {
+                        $team_id = readline("Enter team ID (or '?' to list teams): ");
+                    
+                        if ($team_id === '?') {
+                            echo "\nAvailable teams:\n";
+                            foreach ($teams as $team) {
+                                echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
+                            }
+                            echo "\n";
+                            continue;
+                        }
+                    
+                        // Проверка, что ID — число и существует
+                        $valid_team = false;
+                        foreach ($teams as $team) {
+                            if ((int)$team_id === (int)$team['team_id']) {
+                                $valid_team = true;
+                                break;
+                            }
+                        }
+                    
+                        if ($valid_team) {
+                            break;
+                        } else {
+                            echo "Invalid team ID. Try again or type '?' to list teams.\n";
+                        }
+                    }
+                    
 
                     try {
                         $crud->create($name, $surname, $birth_date, $country, $position, $team_id);
@@ -344,36 +477,139 @@ function main() {
                 }
                 break;
 
-            case '4':
-                $id = readline("Enter player ID to update: ");
-                if ($player = $crud->retrieve($id)) {
-                    echo "\nPlayer ID: {$player['player_id']}\nName: {$player['name']}\nSurname: {$player['surname']}\nBirth Date: {$player['birth_date']}\nCountry: {$player['country']}\nPosition: {$player['position']}\nTeam ID: {$player['team_id']}\nTeam Name: {$player['team_name']}\n\n";
-                    
-                    while(true) {
-                        $name = readline("Enter new name (leave empty to keep current): ");
-                        $surname = readline("Enter new surname (leave empty to keep current): ");
-                        $birth_date = readline("Enter new birth date (YYYY-MM-DD, leave empty to keep current): ");
-                        $country = readline("Enter new country (leave empty to keep current): ");
-                        $position = readline("Enter new position (Goalkeeper, Defender, Midfielder, Forward, leave empty to keep current): ");
-                        $team_id = readline("Enter new team ID (leave empty to keep current): ");
-
+                case '4':
+                    $id = readline("Enter player ID to update: ");
+                    if ($player = $crud->retrieve($id)) {
+                        $crud->displayTable($player); 
+                        echo "\n";               
+                        // Обновление имени игрока
+                        while (true) {
+                            $name = readline("Enter new name (leave empty to keep current: {$player['name']}): ");
+                            if (!empty($name)) {
+                                try {
+                                    $crud->validateName($name, "Name");
+                                    break;
+                                } catch (InvalidArgumentException $e) {
+                                    echo "Error: " . $e->getMessage() . "\n";
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                
+                        // Обновление фамилии игрока
+                        while (true) {
+                            $surname = readline("Enter new surname (leave empty to keep current: {$player['surname']}): ");
+                            if (!empty($surname)) {
+                                try {
+                                    $crud->validateName($surname, "Surname");
+                                    break;
+                                } catch (InvalidArgumentException $e) {
+                                    echo "Error: " . $e->getMessage() . "\n";
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                
+                        // Обновление даты рождения игрока
+                        while (true) {
+                            $birth_date = readline("Enter new birth date (YYYY-MM-DD, leave empty to keep current: {$player['birth_date']}): ");
+                            if (!empty($birth_date)) {
+                                try {
+                                    $crud->validateBirthDate($birth_date);
+                                    break;
+                                } catch (InvalidArgumentException $e) {
+                                    echo "Error: " . $e->getMessage() . "\n";
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                
+                        // Обновление страны игрока
+                        while (true) {
+                            $country = readline("Enter new country (leave empty to keep current: {$player['country']}): ");
+                            if (!empty($country)) {
+                                try {
+                                    $crud->validateName($country, "Country");
+                                    break;
+                                } catch (InvalidArgumentException $e) {
+                                    echo "Error: " . $e->getMessage() . "\n";
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                
+                        // Обновление позиции игрока
+                        while(true){
+                            $flag = readline("Enter new position (leave empty to keep current: {$player['position']} or enter '?' to select position): ");
+                            if($flag=="?"){
+                                $position = $crud->selectPlayerPosition();
+                            }else{
+                                $position = "";
+                            }
+                            break;
+                             
+                        }
+                        
+                
+                        // Обновление команды
+                        while (true) {
+                            $team_id = readline("Enter new team ID (leave empty to keep current: {$player['team_id']} or enter '?' to list teams): ");
+                            if ($team_id === '?') {
+                                echo "\nAvailable teams:\n";
+                                foreach ($teams as $team) {
+                                    echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
+                                }
+                                continue;
+                            }
+                            if (!empty($team_id)) {
+                                // Проверка, что ID — число и существует
+                                if (!preg_match('/^\d+$/', $team_id)) {
+                                    echo "Team ID must be a number.\n";
+                                    continue;
+                                }
+                
+                                // Проверка существования команды
+                                $valid_team = false;
+                                foreach ($teams as $team) {
+                                    if ((int)$team_id === (int)$team['team_id']) {
+                                        $valid_team = true;
+                                        break;
+                                    }
+                                }
+                
+                                if ($valid_team) {
+                                    break;
+                                } else {
+                                    echo "Invalid team ID. Try again or type '?' to list teams.\n";
+                                    continue;
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                
+                        // Попытка обновить данные игрока
                         try {
                             $crud->update($id, $name, $surname, $birth_date, $country, $position, $team_id);
-                            echo "Player updated.\n";
+                            echo "Player updated successfully.\n";
                             break;
                         } catch (InvalidArgumentException $e) {
                             echo "Error: " . $e->getMessage() . "\n";
                             $retry = readline("Do you want to try again? (yes/no): ");
                             if (strtolower($retry) !== 'yes') {
                                 echo "Update canceled.\n";
-                                break;
                             }
                         }
+                    } else {
+                        echo "Player not found.\n";
                     }
-                } else {
-                    echo "Player not found.\n";
-                }
-                break;
+                    break;
+                    
+                
 
             case '5':
                 $id = readline("Enter player ID to delete: ");
