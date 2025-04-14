@@ -36,12 +36,12 @@ class PlayerCRUD {
         if (preg_match('/[0-9]/', $value)) {
             throw new InvalidArgumentException("$fieldName cannot contain numbers.");
         }
-        if (preg_match('/^\s|\s$/', $value)) {
+        if ($value !== trim($value)) {
             throw new InvalidArgumentException("$fieldName cannot start or end with a space.");
-        }
-        if (!preg_match('/^[A-Za-z -]+$/', $value)) {
-            throw new InvalidArgumentException("$fieldName can only contain letters, spaces, and hyphens.");
-        }
+        }        
+        if (!preg_match('/^[A-Za-z]+(?:[ -][A-Za-z]+)*$/', $value)) {
+            throw new InvalidArgumentException("$fieldName can only contain letters, single spaces or hyphens between words.");
+        }        
         return true;
     }
 
