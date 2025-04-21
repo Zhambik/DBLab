@@ -23,11 +23,7 @@ class PlayerCRUD {
         $stmt->execute(['team_id' => $team_id]);
         return $stmt->fetchColumn() > 0;
     }
-
-    // public function validatePosition($position) {
-    //     $validPositions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
-    //     return in_array($position, $validPositions);
-    // } 
+     
 
     public function selectPlayerPosition(): string {
         $positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
@@ -211,7 +207,6 @@ class PlayerCRUD {
     // Обновление информации об игроке
     public function update($id, $name, $surname, $birth_date, $country, $position, $team_id) {
         $currentData = $this->retrieve($id);
-
         
         $name = trim($name);
         $surname = trim($surname);
