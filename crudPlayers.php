@@ -308,6 +308,55 @@ class PlayerCRUD {
         $stmt->execute($ids);
     }
 
+    public function search($filters = [], $limit = 5, $offset = 0) {
+        $query = "SELECT * FROM players WHERE 1=1";
+        $params = [];
+    
+        // Только team_id является числовым
+        $integerFields = ['team_id'];
+    
+        foreach ($filters as $column => $value) {
+            if ($column === 'birth_date') {
+                $query .= " AND birth_date = :birth_date";
+                $params[':birth_date'] = $value;
+    
+            } elseif ($column === 'birth_date_from') {
+                $query .= " AND birth_date >= :birth_date_from";
+                $params[':birth_date_from'] = $value;
+    
+            } elseif ($column === 'birth_date_to') {
+                $query .= " AND birth_date <= :birth_date_to";
+                $params[':birth_date_to'] = $value;
+    
+            } elseif (in_array($column, $integerFields)) {
+                $query .= " AND {$column} = :{$column}";
+                $params[":{$column}"] = (int)$value;
+    
+            } else {
+                $query .= " AND {$column} ILIKE :{$column}";
+                $params[":{$column}"] = '%' . $value . '%';
+            }
+        }
+    
+        $query .= " ORDER BY player_id LIMIT :limit OFFSET :offset";
+        $params[':limit'] = (int)$limit;
+        $params[':offset'] = (int)$offset;
+    
+        try {
+            $stmt = $this->pdo->prepare($query);
+            foreach ($params as $key => $value) {
+                $paramType = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                $stmt->bindValue($key, $value, $paramType);
+            }
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new RuntimeException("Search query failed: " . $e->getMessage());
+        }
+    }
+    
+    
+
     public function displayTable(array $data) {
         if (empty($data)) {
             echo "No data available.\n";
@@ -361,10 +410,10 @@ function main() {
     ];
 
     $crud = new PlayerCRUD($dbConfig);
-
+    
     while (true) {
-        echo "\n1. Create Player\n2. Retrieve All Players\n3. Retrieve Player\n4. Update Player\n5. Delete Player\n6. Delete Many Players\n7. Exit\n";
-
+        echo "\n1. Create Player\n2. Retrieve All Players\n3. Retrieve Player\n4. Update Player\n5. Delete Player\n6. Delete Many Players\n7. Search\n8. Exit\n";
+        $teams = $crud->getTeams();
         $choice = readline("Choose an option: ");
         $teams = $crud->getTeams();
         switch ($choice) {
@@ -649,8 +698,90 @@ function main() {
                     echo "No IDs provided.\n"; 
                 } 
                 break;
-
             case '7':
+                echo "Enter search filters (leave blank to skip):\n";
+                $filters = [];
+            
+                // Прочие фильтры
+                $name = readline("Name: ");
+                if (!empty($name)) $filters['name'] = $name;
+            
+                $surname = readline("Surname: ");
+                if (!empty($surname)) $filters['surname'] = $surname;
+            
+                $country = readline("Country: ");
+                if (!empty($country)) $filters['country'] = $country;
+            
+                $position = readline("Position: ");
+                if (!empty($position)) $filters['position'] = $position;
+            
+                // Выбор фильтра по дате рождения
+                $birth_choice = readline("Do you want exact birth date (1) or date range (2)? ");
+                if ($birth_choice == '1') {
+                    $birth_date = readline("Enter exact birth date (YYYY-MM-DD): ");
+                    if (!empty($birth_date)) {
+                        $filters['birth_date'] = $birth_date;  // Точная дата
+                    }
+                } elseif ($birth_choice == '2') {
+                    $birth_from = readline("Birth date from (YYYY-MM-DD): ");
+                    if (!empty($birth_from)) {
+                        $filters['birth_date_from'] = $birth_from;
+                    }
+            
+                    $birth_to = readline("Birth date to (YYYY-MM-DD): ");
+                    if (!empty($birth_to)) {
+                        $filters['birth_date_to'] = $birth_to;
+                    }
+                }
+
+                while (true) {
+                    $team_id = readline("Team ID (or '?' to list teams): ");
+                
+                    if ($team_id === '?') {
+                        echo "\nAvailable teams:\n";
+                        foreach ($teams as $team) {
+                            echo "ID: {$team['team_id']} - Name: {$team['name']}\n";
+                        }
+                        echo "\n";
+                        continue;
+                    }
+                    elseif(empty($team_id)) break;
+                
+                    // Проверка, что ID — число и существует
+                    $valid_team = false;
+                    foreach ($teams as $team) {
+                        if ((int)$team_id === (int)$team['team_id']) {
+                            $valid_team = true;
+                            break;
+                        }
+                    }
+                
+                    if ($valid_team) {
+                        $filters['team_id'] = $team_id;
+                        break;
+                    } else {
+                        echo "Invalid team ID. Try again or type '?' to list teams.\n";
+                    }
+                }
+            
+                // Запрос на количество результатов и смещение
+                $limit = readline("How many results to show? (default 5): ");
+                $limit = is_numeric($limit) ? (int)$limit : 5;
+            
+                $offset = readline("Offset (default 0): ");
+                $offset = is_numeric($offset) ? (int)$offset : 0;
+            
+                // Выполнение поиска с фильтрами
+                $results = $crud->search($filters, $limit, $offset);
+                if ($results) {
+                    $crud->displayTable($results);
+                } else {
+                    echo "No players found matching your search.\n";
+                }
+                break;
+            
+
+            case '8':
                 exit;
 
             default:
